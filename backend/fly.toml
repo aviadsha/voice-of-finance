@@ -1,0 +1,39 @@
+# Fly.io deployment for the FastAPI backend.
+#   fly launch --no-deploy --copy-config      (from the backend/ directory; pick your own app name)
+#   fly secrets set DATABASE_URL=... JWT_SECRET_KEY=... OPENAI_API_KEY=... ANTHROPIC_API_KEY=... CORS_ORIGINS=https://<your-vercel-app>.vercel.app
+#   fly deploy
+app = "voice-of-finance-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Migrations run once per release instead of on every machine boot.
+  release_command = "alembic upgrade head"
+
+[env]
+  ENVIRONMENT = "production"
+  RUN_MIGRATIONS = "false"
+  SEED_DEMO_DATA = "false"
+  PORT = "8000"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Keep one machine running so background extraction jobs are not interrupted.
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1

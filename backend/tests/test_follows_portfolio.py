@@ -11,18 +11,26 @@ async def test_follows_and_personalised_feed(client: httpx.AsyncClient) -> None:
     assert (await client.get("/api/v1/me/feed", headers=headers)).json() == []
 
     company = await client.post(
-        "/api/v1/me/follows", json={"follow_type": "company", "value": "$nvda", "display_name": "Nvidia"}, headers=headers
+        "/api/v1/me/follows",
+        json={"follow_type": "company", "value": "$nvda", "display_name": "Nvidia"},
+        headers=headers,
     )
     assert company.status_code == 201
     assert company.json()["value"] == "NVDA"
 
-    duplicate = await client.post("/api/v1/me/follows", json={"follow_type": "company", "value": "NVDA"}, headers=headers)
+    duplicate = await client.post(
+        "/api/v1/me/follows", json={"follow_type": "company", "value": "NVDA"}, headers=headers
+    )
     assert duplicate.status_code == 409
 
-    invalid = await client.post("/api/v1/me/follows", json={"follow_type": "company", "value": "not a ticker"}, headers=headers)
+    invalid = await client.post(
+        "/api/v1/me/follows", json={"follow_type": "company", "value": "not a ticker"}, headers=headers
+    )
     assert invalid.status_code == 422
 
-    topic = await client.post("/api/v1/me/follows", json={"follow_type": "topic", "value": "Interest Rates"}, headers=headers)
+    topic = await client.post(
+        "/api/v1/me/follows", json={"follow_type": "topic", "value": "Interest Rates"}, headers=headers
+    )
     assert topic.json()["value"] == "interest-rates"
 
     follows = (await client.get("/api/v1/me/follows", headers=headers)).json()
@@ -50,7 +58,9 @@ async def test_portfolio_is_premium_only(client: httpx.AsyncClient) -> None:
     assert holding.json()["ticker"] == "NVDA"
 
     # Upsert by ticker.
-    await client.post("/api/v1/me/portfolio", json={"ticker": "NVDA", "shares": "20", "average_cost": "100"}, headers=headers)
+    await client.post(
+        "/api/v1/me/portfolio", json={"ticker": "NVDA", "shares": "20", "average_cost": "100"}, headers=headers
+    )
     portfolio = (await client.get("/api/v1/me/portfolio", headers=headers)).json()
     assert len(portfolio["holdings"]) == 1
     assert float(portfolio["total_cost_basis"]) == 2000

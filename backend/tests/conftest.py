@@ -76,7 +76,9 @@ class FakeDownloader:
         self.fail = fail
 
     async def fetch_metadata(self, video_id: str) -> VideoMetadata:
-        return VideoMetadata(video_id=video_id, title="Macro Outlook with Jane Doe", channel="Finance TV", duration_seconds=30)
+        return VideoMetadata(
+            video_id=video_id, title="Macro Outlook with Jane Doe", channel="Finance TV", duration_seconds=30
+        )
 
     async def download_audio(self, video_id: str, workdir: Path) -> DownloadedAudio:
         if self.fail:

@@ -102,7 +102,9 @@ async def test_submit_interview_runs_full_pipeline(client: httpx.AsyncClient, fa
     assert duplicate.status_code == 409
 
     # Regenerating a single format replaces the existing article of that format.
-    regen = await client.post(f"/api/v1/interviews/{interview_id}/articles", json={"formats": ["summary"]}, headers=admin)
+    regen = await client.post(
+        f"/api/v1/interviews/{interview_id}/articles", json={"formats": ["summary"]}, headers=admin
+    )
     assert regen.status_code == 202
     assert len([s for s, _ in fake_factory.llm_instance.calls if "journalist" in s]) == 4
     articles = (await client.get("/api/v1/articles", params={"interview_id": interview_id})).json()
@@ -117,7 +119,9 @@ async def test_pipeline_failure_is_recorded(client: httpx.AsyncClient, fake_fact
     fake_factory.download_fails = True
     admin = await make_admin(client)
     response = await client.post(
-        "/api/v1/interviews", json={"youtube_url": "https://youtu.be/dQw4w9WgXcQ", "generate_articles": False}, headers=admin
+        "/api/v1/interviews",
+        json={"youtube_url": "https://youtu.be/dQw4w9WgXcQ", "generate_articles": False},
+        headers=admin,
     )
     interview = (await client.get(f"/api/v1/interviews/{response.json()['id']}")).json()
     assert interview["status"] == "failed"
@@ -127,7 +131,9 @@ async def test_pipeline_failure_is_recorded(client: httpx.AsyncClient, fake_fact
     assert failed["total"] == 1
 
 
-async def test_submit_interview_permissions_and_validation(client: httpx.AsyncClient, fake_factory: FakeFactory) -> None:
+async def test_submit_interview_permissions_and_validation(
+    client: httpx.AsyncClient, fake_factory: FakeFactory
+) -> None:
     payload = {"youtube_url": "https://youtu.be/dQw4w9WgXcQ"}
     assert (await client.post("/api/v1/interviews", json=payload)).status_code == 401
     user = await signup(client, "user@example.com")

@@ -13,7 +13,9 @@ async def test_comments_votes_and_reputation(client: httpx.AsyncClient) -> None:
     author = await signup(client, "author@example.com")
     voter = await signup(client, "voter@example.com")
 
-    created = await client.post(f"/api/v1/articles/{SLUG}/comments", json={"body": "Great point on rates."}, headers=author)
+    created = await client.post(
+        f"/api/v1/articles/{SLUG}/comments", json={"body": "Great point on rates."}, headers=author
+    )
     assert created.status_code == 201, created.text
     comment = created.json()
     assert comment["user"]["reputation"] == 1  # +1 for commenting
