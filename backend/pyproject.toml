@@ -1,0 +1,20 @@
+[project]
+name = "voice-of-finance-backend"
+version = "0.1.0"
+description = "Voice of Finance API - AI-powered financial news from YouTube interviews"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+# B008: FastAPI's `Query(...)` / `Depends(...)` defaults are idiomatic.
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
