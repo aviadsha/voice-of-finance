@@ -18,7 +18,8 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN chmod +x scripts/entrypoint.sh \
     && useradd --create-home --uid 1000 app \
-    && chown -R app:app /app
+    && mkdir -p /tmp/voice-of-finance-audio \
+    && chown -R app:app /app /tmp/voice-of-finance-audio
 USER app
 
 ENV PORT=8000
