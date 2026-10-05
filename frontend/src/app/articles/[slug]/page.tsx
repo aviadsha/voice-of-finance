@@ -76,7 +76,7 @@ export default async function ArticlePage(props: PageProps<"/articles/[slug]">) 
                 Go Premium
               </Link>
               {!session && (
-                <Link href={`/login?callbackUrl=/articles/${slug}`} className="rounded-md px-4 py-2 text-slate-700">
+                <Link href={`/login?callbackUrl=${encodeURIComponent(`/articles/${slug}`)}`} className="rounded-md px-4 py-2 text-slate-700">
                   Log in
                 </Link>
               )}

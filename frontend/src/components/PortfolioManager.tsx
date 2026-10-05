@@ -94,7 +94,11 @@ export default function PortfolioManager({
                 <td className="p-2 text-right">{avg !== null ? money(avg) : "—"}</td>
                 <td className="p-2 text-right">{avg !== null ? money(avg * Number(holding.shares)) : "—"}</td>
                 <td className="p-2 text-right">
-                  <button onClick={() => remove(holding)} className="text-slate-400 hover:text-red-600">
+                  <button
+                    onClick={() => remove(holding)}
+                    className="text-slate-400 hover:text-red-600"
+                    aria-label={`Remove ${holding.ticker}`}
+                  >
                     Remove
                   </button>
                 </td>

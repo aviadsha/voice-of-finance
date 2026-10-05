@@ -171,7 +171,7 @@ export default function CommentsSection({ slug, initialComments, signedIn, curre
           <CommentForm slug={slug} onCreated={(created) => setComments((all) => [created, ...all])} />
         ) : (
           <p className="text-sm text-slate-600">
-            <Link href={`/login?callbackUrl=/articles/${slug}`} className="text-emerald-700 hover:underline">
+            <Link href={`/login?callbackUrl=${encodeURIComponent(`/articles/${slug}`)}`} className="text-emerald-700 hover:underline">
               Log in
             </Link>{" "}
             to join the discussion and build your reputation.
