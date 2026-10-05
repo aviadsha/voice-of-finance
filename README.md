@@ -258,7 +258,7 @@ All settings are environment variables. See the annotated examples:
 | `MAX_VIDEO_DURATION_SECONDS` | `10800` | Reject videos longer than this |
 | `WHISPER_MAX_CHUNK_MB` / `WHISPER_CHUNK_SECONDS` | `24` / `600` | Audio chunking for Whisper |
 | `ANALYST_VERIFICATION_THRESHOLD` | `100` | Reputation needed to apply as verified analyst |
-| `BILLING_MOCK_ENABLED` | `true` | Self-service upgrade without payment (disable in production until Stripe is wired) |
+| `BILLING_MOCK_ENABLED` | on, except in production | Self-service upgrade without payment (mock checkout until Stripe is wired) |
 | `RUN_MIGRATIONS` / `SEED_DEMO_DATA` | `true` / `false` | Container entrypoint behaviour |
 
 ### Frontend
@@ -396,8 +396,7 @@ fly secrets set \
   DATABASE_URL="postgresql://..." \
   JWT_SECRET_KEY="$(openssl rand -base64 48)" \
   OPENAI_API_KEY="sk-..." ANTHROPIC_API_KEY="sk-ant-..." \
-  CORS_ORIGINS="https://your-app.vercel.app" \
-  BILLING_MOCK_ENABLED=false
+  CORS_ORIGINS="https://your-app.vercel.app"
 fly deploy
 ```
 [`fly.toml`](backend/fly.toml) runs `alembic upgrade head` as a release command and health-checks `/health`.
@@ -417,7 +416,7 @@ The frontend also ships a standalone [`Dockerfile`](frontend/Dockerfile) for any
 
 ### Production checklist
 - [ ] `ENVIRONMENT=production` and a strong `JWT_SECRET_KEY` / `NEXTAUTH_SECRET`
-- [ ] `BILLING_MOCK_ENABLED=false` (until a payment provider is integrated)
+- [ ] Leave `BILLING_MOCK_ENABLED` unset/`false` (it defaults to off in production) until a payment provider is integrated
 - [ ] `CORS_ORIGINS` set to your frontend domain
 - [ ] Create an admin: `python -m app.cli create-admin you@example.com` (e.g. `fly ssh console`)
 - [ ] Database backups enabled (Supabase does this by default)

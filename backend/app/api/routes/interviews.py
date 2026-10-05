@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.agents import pipeline
 from app.api.deps import AdminUser, AnalystUser, DBSession, PremiumUser
@@ -24,6 +24,23 @@ _IN_PROGRESS = {
     InterviewStatus.ANALYZING,
     InterviewStatus.GENERATING,
 }
+# Statuses in which a background job is queued or running.
+_BUSY = _IN_PROGRESS | {InterviewStatus.PENDING}
+
+
+async def _claim(db: DBSession, interview: Interview, new_status: InterviewStatus) -> None:
+    """Atomically move an idle interview to `new_status`; 409 if another job is already running."""
+    result = await db.execute(
+        update(Interview)
+        .where(Interview.id == interview.id, Interview.status.not_in(_BUSY))
+        .values(status=new_status)
+        .execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Interview is currently being processed")
+    await db.commit()
+    await db.refresh(interview)
 
 
 async def _get_interview(db: DBSession, interview_id: uuid.UUID) -> Interview:
@@ -94,10 +111,7 @@ async def reprocess_interview(
 ) -> Interview:
     """Re-run the full pipeline (download, transcription, insights, articles)."""
     interview = await _get_interview(db, interview_id)
-    if interview.status in _IN_PROGRESS:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Interview is currently being processed")
-    interview.status = InterviewStatus.PENDING
-    await db.commit()
+    await _claim(db, interview, InterviewStatus.PENDING)
     background.add_task(pipeline.process_interview, interview.id, True, payload.formats)
     return interview
 
@@ -110,8 +124,7 @@ async def regenerate_articles(
     interview = await _get_interview(db, interview_id)
     if not interview.transcript:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Interview has not been transcribed yet")
-    if interview.status in _IN_PROGRESS:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Interview is currently being processed")
+    await _claim(db, interview, InterviewStatus.GENERATING)
     background.add_task(pipeline.regenerate_articles, interview.id, payload.formats)
     return interview
 

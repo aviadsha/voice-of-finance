@@ -121,6 +121,7 @@ export interface Comment {
   is_deleted: boolean;
   created_at: string;
   user: UserPublic;
+  my_vote: number;
 }
 
 export interface Follow {

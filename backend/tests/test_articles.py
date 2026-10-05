@@ -1,7 +1,9 @@
 import httpx
+import pytest
 
 from app import cli
-from tests.conftest import signup
+from app.core.config import Settings
+from tests.conftest import make_admin, signup
 
 FREE_SLUG = "fed-to-cut-slowly-as-ai-chip-demand-outruns-supply"
 PREMIUM_SLUG = "ai-semiconductors-bull-case-bear-case-analysis"
@@ -72,3 +74,25 @@ async def test_unknown_article_404(client: httpx.AsyncClient) -> None:
 async def test_plans(client: httpx.AsyncClient) -> None:
     plans = (await client.get("/api/v1/subscription/plans")).json()
     assert [p["tier"] for p in plans] == ["free", "premium"]
+
+
+async def test_admin_sets_article_status(client: httpx.AsyncClient) -> None:
+    await cli.seed()
+    reader = await signup(client, "reader2@example.com")
+    body = {"status": "archived"}
+    assert (await client.post(f"/api/v1/articles/{FREE_SLUG}/status", json=body, headers=reader)).status_code == 403
+
+    admin = await make_admin(client)
+    archived = await client.post(f"/api/v1/articles/{FREE_SLUG}/status", json=body, headers=admin)
+    assert archived.status_code == 200, archived.text
+    assert archived.json()["status"] == "archived"
+    assert (await client.get(f"/api/v1/articles/{FREE_SLUG}")).status_code == 404
+
+
+def test_mock_billing_disabled_by_default_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BILLING_MOCK_ENABLED", raising=False)
+    secret = "s" * 48
+    assert Settings(environment="production", jwt_secret_key=secret).billing_mock_enabled is False
+    assert Settings(environment="development").billing_mock_enabled is True
+    explicit = Settings(environment="production", jwt_secret_key=secret, billing_mock_enabled=True)
+    assert explicit.billing_mock_enabled is True

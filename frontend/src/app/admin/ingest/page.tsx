@@ -17,7 +17,9 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function IngestPage() {
   const session = await requireSession("/admin/ingest");
-  const allowed = session.user.role === "admin" || session.user.isVerifiedAnalyst;
+  // Mirrors the backend's `require_analyst` dependency.
+  const allowed =
+    session.user.role === "admin" || (session.user.role === "analyst" && session.user.isVerifiedAnalyst);
   if (!allowed) {
     return (
       <p className="mx-auto max-w-xl rounded-md bg-white p-6 text-slate-600">

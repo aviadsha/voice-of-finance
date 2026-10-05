@@ -72,20 +72,18 @@ function CommentForm({
 export default function CommentsSection({ slug, initialComments, signedIn, currentUserId }: Props) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [myVotes, setMyVotes] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
 
   const replace = (updated: Comment) => setComments((all) => all.map((c) => (c.id === updated.id ? updated : c)));
 
   async function vote(comment: Comment, direction: 1 | -1) {
-    const value = myVotes[comment.id] === direction ? 0 : direction;
+    const value = comment.my_vote === direction ? 0 : direction;
     try {
       const updated = await clientApi<Comment>(`/comments/${comment.id}/vote`, {
         method: "POST",
         body: JSON.stringify({ value }),
       });
       replace(updated);
-      setMyVotes((votes) => ({ ...votes, [comment.id]: value }));
       setError(null);
     } catch (err) {
       setError((err as Error).message);
@@ -120,7 +118,7 @@ export default function CommentsSection({ slug, initialComments, signedIn, curre
           <button
             disabled={!signedIn || comment.user.id === currentUserId}
             onClick={() => vote(comment, 1)}
-            className={`disabled:opacity-40 ${myVotes[comment.id] === 1 ? "text-emerald-600" : ""}`}
+            className={`disabled:opacity-40 ${comment.my_vote === 1 ? "text-emerald-600" : ""}`}
             aria-label="Upvote"
           >
             ▲
@@ -129,7 +127,7 @@ export default function CommentsSection({ slug, initialComments, signedIn, curre
           <button
             disabled={!signedIn || comment.user.id === currentUserId}
             onClick={() => vote(comment, -1)}
-            className={`disabled:opacity-40 ${myVotes[comment.id] === -1 ? "text-red-600" : ""}`}
+            className={`disabled:opacity-40 ${comment.my_vote === -1 ? "text-red-600" : ""}`}
             aria-label="Downvote"
           >
             ▼

@@ -32,11 +32,18 @@ async def test_comments_votes_and_reputation(client: httpx.AsyncClient) -> None:
 
     up = await client.post(f"/api/v1/comments/{comment['id']}/vote", json={"value": 1}, headers=voter)
     assert up.json()["score"] == 1
+    assert up.json()["my_vote"] == 1
     assert up.json()["user"]["reputation"] == 6  # 1 + 5
 
     # Voting again with the same value is idempotent.
     again = await client.post(f"/api/v1/comments/{comment['id']}/vote", json={"value": 1}, headers=voter)
     assert again.json()["score"] == 1
+
+    # The comment list reports each reader's own vote (anonymous readers get 0).
+    listed = (await client.get(f"/api/v1/articles/{SLUG}/comments", headers=voter)).json()
+    assert {c["id"]: c["my_vote"] for c in listed}[comment["id"]] == 1
+    anonymous = (await client.get(f"/api/v1/articles/{SLUG}/comments")).json()
+    assert all(c["my_vote"] == 0 for c in anonymous)
 
     down = await client.post(f"/api/v1/comments/{comment['id']}/vote", json={"value": -1}, headers=voter)
     assert down.json()["score"] == -1

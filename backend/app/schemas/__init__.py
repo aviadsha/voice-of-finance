@@ -187,6 +187,10 @@ class ArticleCreate(BaseModel):
     is_premium: bool = True
 
 
+class ArticleStatusUpdate(BaseModel):
+    status: ArticleStatus
+
+
 class GenerateArticlesRequest(BaseModel):
     formats: list[ArticleFormat] = Field(default_factory=lambda: list(ArticleFormat), min_length=1)
 
@@ -206,6 +210,8 @@ class CommentOut(ORMModel):
     is_deleted: bool
     created_at: datetime
     user: UserPublic
+    # The requesting user's vote on this comment (1, -1 or 0); 0 for anonymous readers.
+    my_vote: int = 0
 
 
 class VoteRequest(BaseModel):

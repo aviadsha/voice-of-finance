@@ -1,7 +1,12 @@
+import uuid
+
 import httpx
 import pytest
+from sqlalchemy import update
 
 from app.agents.text_utils import TranscriptIndex, parse_timestamp
+from app.core import database
+from app.models import Interview, InterviewStatus
 from app.services.ai import LLMResponseError, parse_json_object
 from app.services.youtube import InvalidYouTubeURL, extract_video_id, timestamp_url
 from tests.conftest import SEGMENTS, FakeFactory, make_admin, signup
@@ -109,6 +114,16 @@ async def test_submit_interview_runs_full_pipeline(client: httpx.AsyncClient, fa
     assert len([s for s, _ in fake_factory.llm_instance.calls if "journalist" in s]) == 4
     articles = (await client.get("/api/v1/articles", params={"interview_id": interview_id})).json()
     assert articles["total"] == 3
+
+    # A second job cannot be started while one is already queued or running.
+    async with database.SessionLocal() as session:
+        await session.execute(
+            update(Interview).where(Interview.id == uuid.UUID(interview_id)).values(status=InterviewStatus.GENERATING)
+        )
+        await session.commit()
+    for path in ("articles", "reprocess"):
+        busy = await client.post(f"/api/v1/interviews/{interview_id}/{path}", json={}, headers=admin)
+        assert busy.status_code == 409, path
 
     # Deleting the interview cascades to its articles.
     assert (await client.delete(f"/api/v1/interviews/{interview_id}", headers=admin)).status_code == 204

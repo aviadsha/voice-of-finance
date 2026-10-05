@@ -65,8 +65,9 @@ class Settings(BaseSettings):
 
     # --- Billing ---
     # MVP: when enabled, users can self-upgrade to premium without payment.
-    # Disable in production once a payment provider (e.g. Stripe) is wired in.
-    billing_mock_enabled: bool = True
+    # Unset => enabled everywhere except production, so a production deploy never
+    # hands out free premium by accident. Replace with a payment provider (e.g. Stripe).
+    billing_mock_enabled: bool | None = None
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -98,6 +99,8 @@ class Settings(BaseSettings):
             value = "postgresql+asyncpg://" + value[len("postgresql://") :]
         self.database_url = value
 
+        if self.billing_mock_enabled is None:
+            self.billing_mock_enabled = not self.is_production
         if self.is_production and self.jwt_secret_key == DEFAULT_JWT_SECRET:
             raise ValueError("JWT_SECRET_KEY must be set to a strong random value in production")
         return self

@@ -9,7 +9,7 @@ from app.agents.community import json_array_contains
 from app.agents.text_utils import normalize_ticker, normalize_topic, reading_time_minutes
 from app.api.deps import AdminUser, AnalystUser, DBSession, OptionalUser
 from app.models import Article, ArticleFormat, ArticleStatus, Interview, User
-from app.schemas import ArticleCreate, ArticleListItem, ArticleOut, Page
+from app.schemas import ArticleCreate, ArticleListItem, ArticleOut, ArticleStatusUpdate, Page
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -137,7 +137,8 @@ async def create_author_article(payload: ArticleCreate, author: AnalystUser, db:
 
 
 @router.post("/{slug}/status", response_model=ArticleOut, tags=["admin"])
-async def set_article_status(slug: str, new_status: ArticleStatus, admin: AdminUser, db: DBSession) -> ArticleOut:
+async def set_article_status(slug: str, payload: ArticleStatusUpdate, admin: AdminUser, db: DBSession) -> ArticleOut:
+    new_status = payload.status
     article = await get_published_article(db, slug, admin)
     article.status = new_status
     if new_status == ArticleStatus.PUBLISHED and article.published_at is None:

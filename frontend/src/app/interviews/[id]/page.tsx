@@ -20,7 +20,10 @@ export async function generateMetadata(props: PageProps<"/interviews/[id]">): Pr
 }
 
 function videoUrl(interview: Interview, seconds: number | null) {
-  return seconds === null ? interview.youtube_url : `${interview.youtube_url}&t=${Math.floor(seconds)}s`;
+  if (seconds === null) return interview.youtube_url;
+  const url = new URL(interview.youtube_url);
+  url.searchParams.set("t", `${Math.floor(seconds)}s`);
+  return url.toString();
 }
 
 export default async function InterviewPage(props: PageProps<"/interviews/[id]">) {
